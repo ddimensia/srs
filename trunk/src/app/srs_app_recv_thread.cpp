@@ -23,10 +23,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <srs_app_recv_thread.hpp>
 
+#include <srs_rtmp_amf0.hpp>
 #include <srs_rtmp_stack.hpp>
 #include <srs_rtmp_stack.hpp>
 #include <srs_app_rtmp_conn.hpp>
 #include <srs_protocol_buffer.hpp>
+#include <srs_kernel_stream.hpp>
 #include <srs_kernel_utility.hpp>
 #include <srs_core_performance.hpp>
 #include <srs_app_config.hpp>
@@ -262,6 +264,7 @@ SrsPublishRecvThread::SrsPublishRecvThread(
     video_frames = 0;
     error = st_cond_new();
     ncid = cid = 0;
+    last_time = 0;
     
     req = _req;
     mr_fd = mr_sock_fd;
@@ -389,11 +392,44 @@ int SrsPublishRecvThread::handle(SrsCommonMessage* msg)
     if (msg->header.is_video()) {
         video_frames++;
     }
-    
+   
+    long current_time = srs_update_system_time_ms(); 
     // log to show the time of recv thread.
     srs_verbose("recv thread now=%"PRId64"us, got msg time=%"PRId64"ms, size=%d",
-        srs_update_system_time_ms(), msg->header.timestamp, msg->size);
+        current_time, msg->header.timestamp, msg->size);
 
+    if (_nb_msgs % 10 == 0) {
+        time_t t = time(NULL);
+        char buff[20];
+        strftime(buff,20,"%Y-%m-%d %H:%M:%S", gmtime(&t));
+        SrsAmf0Any* cmd = SrsAmf0Any::str("onMetaData");
+        SrsAmf0EcmaArray* array = SrsAmf0Any::ecma_array();
+        array->set("text",SrsAmf0Any::str(buff));
+        array->set("language", SrsAmf0Any::str("en"));
+        array->set("trackIId", SrsAmf0Any::str("2"));
+        int nb_bytes = cmd->total_size() + array->total_size();
+
+        SrsCommonMessage* txtmsg = new SrsCommonMessage();
+        txtmsg->header.message_type = RTMP_MSG_AMF0DataMessage;
+        txtmsg->header.payload_length = nb_bytes;
+        txtmsg->header.timestamp = msg->header.timestamp;
+        txtmsg->header.stream_id = msg->header.stream_id;
+        txtmsg->header.perfer_cid = RTMP_CID_OverConnection2;
+        txtmsg->create_payload(nb_bytes);
+	txtmsg->size = nb_bytes;
+        
+        SrsStream metaStream;
+        metaStream.initialize(txtmsg->payload, nb_bytes);
+        cmd->write(&metaStream);
+        array->write(&metaStream);
+
+	srs_verbose("sent data msg, size=%d, type=%d", txtmsg->size, txtmsg->header.message_type);
+        if((ret = _conn->handle_publish_message(_source, txtmsg, _is_fmle, _is_edge)) != ERROR_SUCCESS) {
+            srs_error("send txt message failed. ret=%d", ret);
+            return ret;
+        }
+        srs_freep(txtmsg);
+    }
     // the rtmp connection will handle this message
     ret = _conn->handle_publish_message(_source, msg, _is_fmle, _is_edge);
 

@@ -179,6 +179,7 @@ private:
     // merged context id.
     int cid;
     int ncid;
+    long last_time;
 public:
     SrsPublishRecvThread(SrsRtmpServer* rtmp_sdk, 
         SrsRequest* _req, int mr_sock_fd, int timeout_ms, 

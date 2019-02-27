@@ -23,6 +23,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <srs_app_rtmp_conn.hpp>
 
+#include <ctime>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -32,6 +33,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using namespace std;
 
 #include <srs_kernel_error.hpp>
+#include <srs_kernel_stream.hpp>
 #include <srs_kernel_log.hpp>
 #include <srs_rtmp_stack.hpp>
 #include <srs_core_autofree.hpp>
@@ -802,7 +804,37 @@ int SrsRtmpConn::do_playing(SrsSource* source, SrsConsumer* consumer, SrsQueueRe
                 starttime = msg->timestamp;
             }
         }
-        
+/**
+        if (count > 0) {
+            time_t t = time(NULL);
+            char buff[20];
+            strftime(buff,20,"%Y-%m-%d %H:%M:%S", gmtime(&t));
+            SrsAmf0Any* cmd = SrsAmf0Any::str("onTextData");
+            SrsAmf0EcmaArray* array = SrsAmf0Any::ecma_array();
+            array->set("text",SrsAmf0Any::str(buff));
+            array->set("language", SrsAmf0Any::str("en"));
+            array->set("trackIId", SrsAmf0Any::str("2"));
+            int nb_bytes = cmd->total_size() + array->total_size();
+            char *bytes = new char[nb_bytes];
+
+            SrsStream metaStream;
+            metaStream.initialize(bytes, nb_bytes);
+            cmd->write(&metaStream);
+            array->write(&metaStream);
+
+            SrsMessageHeader* header = new SrsMessageHeader;
+            header->initialize_amf0_script(nb_bytes, res->stream_id);
+            header->timestamp = msgs.msgs[0]->timestamp;
+
+            SrsSharedPtrMessage* msg = new SrsSharedPtrMessage();
+            msg->create(header, bytes, nb_bytes);
+
+            if((ret = rtmp->send_and_free_message(msg, res->stream_id)) != ERROR_SUCCESS) {
+                srs_error("send txt message failed. ret=%d", ret);
+                return ret;
+            }
+        }
+ **/       
         // sendout messages, all messages are freed by send_and_free_messages().
         // no need to assert msg, for the rtmp will assert it.
         if (count > 0 && (ret = rtmp->send_and_free_messages(msgs.msgs, count, res->stream_id)) != ERROR_SUCCESS) {

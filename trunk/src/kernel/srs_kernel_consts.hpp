@@ -181,6 +181,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ///////////////////////////////////////////////////////////
 #define SRS_CONSTS_RTMP_SET_DATAFRAME            "@setDataFrame"
 #define SRS_CONSTS_RTMP_ON_METADATA              "onMetaData"
+#define SRS_CONSTS_RTMP_ON_TEXTDATA              "onTextData"
 
 ///////////////////////////////////////////////////////////
 // HTTP/HLS consts values

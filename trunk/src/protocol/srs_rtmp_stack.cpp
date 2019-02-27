@@ -798,7 +798,7 @@ int SrsProtocol::do_decode_message(SrsMessageHeader& header, SrsStream* stream, 
             srs_info("decode the AMF0/AMF3 command(unpublish message).");
             *ppacket = packet = new SrsFMLEStartPacket();
             return packet->decode(stream);
-        } else if(command == SRS_CONSTS_RTMP_SET_DATAFRAME || command == SRS_CONSTS_RTMP_ON_METADATA) {
+        } else if(command == SRS_CONSTS_RTMP_SET_DATAFRAME || command == SRS_CONSTS_RTMP_ON_METADATA || command == SRS_CONSTS_RTMP_ON_TEXTDATA) {
             srs_info("decode the AMF0/AMF3 data(onMetaData message).");
             *ppacket = packet = new SrsOnMetaDataPacket();
             return packet->decode(stream);

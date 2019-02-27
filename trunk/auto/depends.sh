@@ -479,8 +479,8 @@ if [ $SRS_HTTP_CORE = YES ]; then
         else
             echo "build http-parser-2.1";
             (
-                rm -rf ${SRS_OBJS}/http-parser-2.1 && cd ${SRS_OBJS} && unzip -q ../3rdparty/http-parser-2.1.zip && 
-                cd http-parser-2.1 && 
+                #rm -rf ${SRS_OBJS}/http-parser-2.1 && cd ${SRS_OBJS} && unzip -q ../3rdparty/http-parser-2.1.zip && 
+                cd ${SRS_OBJS}/http-parser-2.1 && 
                 patch -p0 < ../../3rdparty/patches/2.http.parser.patch &&
                 make package &&
                 cd .. && rm -rf hp && ln -sf http-parser-2.1 hp &&
