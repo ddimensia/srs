@@ -1,0 +1,17 @@
+*** crypto/ui/ui_openssl.c	2014-01-06 21:47:42.000000000 -0500
+--- openssl.musl.patch/crypto/ui/ui_openssl.c	2019-09-06 19:24:02.660382696 -0400
+***************
+*** 196,201 ****
+--- 196,207 ----
+  # undef  SGTTY
+  #endif
+  
++ #if defined(__mips__) && !defined(TERMIOS)
++ # define TERMIOS
++ # undef  TERMIO
++ # undef  SGTTY
++ #endif
++ 
+  #ifdef _LIBC
+  # undef  TERMIOS
+  # define TERMIO
